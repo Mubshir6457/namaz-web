@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Faizana Raza Mudrasa Namaz Portal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .page { display: none; background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); max-width: 1000px; margin: 20px auto; backdrop-filter: blur(10px); }
+        .active { display: block; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Header Design */
+        .header { background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%); color: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; text-align: center; position: relative; overflow: hidden; }
+        .header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%); transform: rotate(45deg); }
+        .header h1 { font-size: 32px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .header p { font-size: 16px; opacity: 0.9; }
+        
+        /* Cards */
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid rgba(255, 255, 255, 0.3); }
+        .card h3 { color: #ff6b6b; border-bottom: 3px solid #ffa726; padding-bottom: 12px; margin-bottom: 20px; font-size: 22px; display: flex; align-items: center; gap: 10px; }
+        .card h3 i { color: #ffa726; }
+        
+        /* Buttons */
+        .btn { padding: 14px 28px; border: none; border-radius: 50px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-success { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; }
+        .btn-success:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3); }
+        .btn-primary { background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3); }
+        .btn-danger { background: linear-gradient(135deg, #f44336 0%, #b71c1c 100%); color: white; }
+        .btn-danger:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(244, 67, 54, 0.3); }
+        .btn-warning { background: linear-gradient(135deg, #FF9800 0%, #EF6C00 100%); color: white; }
+        .btn-warning:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255, 152, 0, 0.3); }
+        .btn-secondary { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; }
+        .btn-secondary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3); }
+        
+        /* Forms */
+        input, select { padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; margin: 8px 0; width: 100%; font-size: 16px; transition: all 0.3s ease; background: #f8f9fa; }
+        input:focus, select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); background: white; }
+        
+        /* Student Container */
+        .student-namaz-container { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 15px; margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .student-name-header { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 18px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 20px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
+        
+        /* Horizontal Namaz Selection */
+        .namaz-horizontal { display: flex; justify-content: space-between; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+        .namaz-option { flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 2px solid transparent; cursor: pointer; }
+        .namaz-option:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .namaz-option.selected { border-color: #4CAF50; background: #e8f5e9; }
+        .namaz-option h4 { color: #333; margin-bottom: 10px; font-size: 18px; font-weight: 600; }
+        .namaz-option p { color: #666; font-size: 14px; margin-bottom: 15px; }
+        .namaz-checkbox { transform: scale(1.8); margin-top: 5px; accent-color: #4CAF50; }
+        
+        /* Excel Table */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 25px; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        th { background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%); color: white; padding: 18px; text-align: center; font-weight: 600; font-size: 16px; }
+        td { padding: 16px; text-align: center; border-bottom: 1px solid #e0e0e0; background: white; }
+        tr:hover td { background: #f8f9fa; }
+        .namaz-cell { padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; min-width: 60px; }
+        .fajr-cell { background: linear-gradient(135deg, #bbdefb 0%, #64b5f6 100%); color: #1565c0; }
+        .dhuhr-cell { background: linear-gradient(135deg, #c8e6c9 0%, #81c784 100%); color: #2e7d32; }
+        .asr-cell { background: linear-gradient(135deg, #e1bee7 0%, #ba68c8 100%); color: #7b1fa2; }
+        .maghrib-cell { background: linear-gradient(135deg, #ffcc80 0%, #ffb74d 100%); color: #ef6c00; }
+        .isha-cell { background: linear-gradient(135deg, #b0bec5 0%, #78909c 100%); color: #37474f; }
+        .total-cell { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; font-weight: bold; }
+        
+        /* Admin Button */
+        .admin-btn { position: fixed; top: 25px; right: 25px; z-index: 1000; }
+        .admin-btn button { background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%); color: white; padding: 12px 25px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4); transition: all 0.3s ease; display: flex; align-items: center; gap: 10px; }
+        .admin-btn button:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(255, 107, 107, 0.6); }
+        
+        /* Navigation */
+        .mobile-menu { display: flex; justify-content: space-between; background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%); padding: 15px; border-radius: 15px; margin-bottom: 25px; flex-wrap: wrap; box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3); }
+        .mobile-menu button { background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid rgba(255, 255, 255, 0.3); padding: 12px 18px; border-radius: 10px; cursor: pointer; font-size: 14px; flex: 1; margin: 0 5px; min-width: 70px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .mobile-menu button:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-3px); }
+        
+        /* Alerts */
+        .alert { padding: 18px; border-radius: 12px; margin: 15px 0; text-align: center; font-size: 16px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .success { background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%); color: #2e7d32; border-left: 5px solid #4CAF50; }
+        .error { background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%); color: #c62828; border-left: 5px solid #f44336; }
+        .info { background: linear-gradient(135deg, #bbdefb 0%, #64b5f6 100%); color: #1565c0; border-left: 5px solid #2196F3; }
+        
+        /* Status Badges */
+        .status-badge { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: 600; margin: 5px; }
+        .pending { background: linear-gradient(135deg, #fff3cd 0%, #ffecb5 100%); color: #856404; border: 1px solid #ffeaa7; }
+        .approved { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; border: 1px solid #b1dfbb; }
+        .rejected { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; border: 1px solid #f1b0b7; }
+        
+        /* Submission History */
+        .submission-history { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 15px; }
+        .submission-item { background: white; padding: 12px; border-radius: 8px; margin: 8px 0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page { padding: 20px; margin: 10px; }
+            .header { padding: 25px 20px; }
+            .header h1 { font-size: 26px; }
+            .namaz-horizontal { flex-direction: column; }
+            .namaz-option { min-width: 100%; }
+            .mobile-menu { flex-direction: column; gap: 10px; }
+            .mobile-menu button { width: 100%; margin: 5px 0; }
+            .admin-btn { top: 15px; right: 15px; }
+            .admin-btn button { padding: 10px 20px; font-size: 14px; }
+        }
+        
+        /* Colorful Family Backgrounds */
+        .roll-1 { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+        .roll-4 { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); }
+        .roll-6 { background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); }
+        .roll-7 { background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%); }
+        .roll-8 { background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%); }
+        .roll-13 { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%); }
+        
+        /* Login Box */
+        .login-box { max-width: 400px; margin: 50px auto; padding: 40px; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center; }
+        .login-box h2 { color: #ff6b6b; margin-bottom: 30px; font-size: 28px; }
+        
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
+        .stat-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+        .stat-box h4 { font-size: 16px; opacity: 0.9; margin-bottom: 10px; }
+        .stat-number { font-size: 36px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 50px 20px; color: #666; }
+        .empty-state i { font-size: 60px; color: #e0e0e0; margin-bottom: 20px; }
+        
+        /* Pending Approval Section */
+        .pending-section { background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #ffeaa7; }
+        .approval-actions { display: flex; gap: 10px; margin-top: 10px; }
+        
+        /* Delete Button */
+        .delete-btn { background: linear-gradient(135deg, #f44336 0%, #b71c1c 100%); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 5px; }
+        .delete-btn:hover { transform: scale(1.1); box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3); }
+        
+        /* History Actions */
+        .history-actions { display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<!-- Admin Login Button -->
+<div class="admin-btn">
+    <button onclick="showAdminLogin()"><i class="fas fa-user-shield"></i> Admin</button>
+</div>
+
+<!-- Parent Page -->
+<div id="parentPage" class="page active">
+    <div class="header">
+        <h1>📿 Faizana Raza Mudrasa Namaz Portal</h1>
+        <p>For Parents - Track your children's daily prayers</p>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-search"></i> Find Your Family</h3>
+        <div style="text-align: center; margin: 25px 0;">
+            <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                <input type="number" id="rollNumber" placeholder="Enter Family Roll Number" style="flex: 1; max-width: 300px; padding: 16px; font-size: 18px;">
+                <button class="btn btn-success" onclick="loadFamily()" style="padding: 16px 35px;">
+                    <i class="fas fa-search"></i> Search Family
+                </button>
+            </div>
+        </div>
+        
+        <div id="familyInfo" style="display:none;">
+            <div class="card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                <h3 style="color: #1565c0;"><i class="fas fa-users"></i> Family Found</h3>
+                <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: #1565c0; margin-bottom: 10px;">Family Roll: <span id="familyRoll" style="font-size: 2em;">0</span></h2>
+                    <p style="font-size: 18px; color: #0d47a1;"><i class="fas fa-user-graduate"></i> <span id="studentCount">0</span> students in family</p>
+                </div>
+            </div>
+            
+            <!-- Pending Submissions Info -->
+            <div id="pendingInfo" style="display:none;">
+                <div class="alert info">
+                    <i class="fas fa-clock"></i> You have <span id="pendingCount">0</span> pending submissions waiting for admin approval
+                </div>
+            </div>
+            
+            <!-- Submission History -->
+            <div id="submissionHistory" style="display:none;">
+                <div class="card">
+                    <h3><i class="fas fa-history"></i> Submission History</h3>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+            
+            <div id="studentsNamazContainer"></div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-warning" onclick="submitAllNamaz()" style="padding: 18px 50px; font-size: 18px;">
+                    <i class="fas fa-paper-plane"></i> Submit for Approval
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Login -->
+<div id="loginPage" class="page">
+    <div class="login-box">
+        <h2><i class="fas fa-lock"></i> Admin Access</h2>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
+        <button class="btn btn-success" onclick="login()" style="width:100%; padding: 16px; margin-top: 20px;">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+        <button class="btn btn-primary" onclick="showParentPage()" style="width:100%; padding: 16px; margin-top: 15px;">
+            <i class="fas fa-home"></i> Back to Parent Portal
+        </button>
+        <p id="loginStatus" style="color:#f44336;margin-top:20px;font-size:14px;"></p>
+    </div>
+</div>
+
+<!-- Navigation Menu -->
+<div class="mobile-menu" id="navBar" style="display:none;">
+    <button onclick="showPage('adminPage')"><i class="fas fa-user-cog"></i> Admin</button>
+    <button onclick="showPage('approvalPage')"><i class="fas fa-check-circle"></i> Approvals</button>
+    <button onclick="showPage('reportPage')"><i class="fas fa-chart-bar"></i> Reports</button>
+    <button onclick="showPage('sheetPage')"><i class="fas fa-table"></i> Excel Sheet</button>
+    <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+
+<!-- Admin Page -->
+<div id="adminPage" class="page">
+    <div class="header">
+        <h1><i class="fas fa-user-cog"></i> Admin Panel</h1>
+        <p>Manage students and families</p>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-user-plus"></i> Add Family Students</h3>
+        <div style="margin: 20px 0;">
+            <input type="number" id="newFamilyRoll" placeholder="Family Roll Number">
+            <div id="familyStudentForms" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <input type="text" placeholder="Student 1 Name" class="studentName">
+                <input type="text" placeholder="Student 2 Name" class="studentName">
+                <input type="text" placeholder="Student 3 Name" class="studentName">
+                <input type="text" placeholder="Student 4 Name" class="studentName">
+                <input type="text" placeholder="Student 5 Name" class="studentName">
+            </div>
+        </div>
+        <div style="text-align: center; margin: 25px 0;">
+            <button class="btn btn-success" onclick="addFamilyStudents()" style="padding: 16px 40px;">
+                <i class="fas fa-save"></i> Add Family Students
+            </button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-redo"></i> Reset Family Prayers</h3>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="resetRoll" placeholder="Family Roll to Reset" style="max-width: 300px; margin: 0 auto 20px;">
+            <button class="btn btn-danger" onclick="resetFamilyNamaz()">
+                <i class="fas fa-trash-alt"></i> Reset Family
+            </button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-key"></i> Change Admin Password</h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-top: 15px;">
+            <div style="margin-bottom: 20px;">
+                <input type="password" id="currentPasswordInput" placeholder="Current Password">
+                <input type="password" id="newPasswordInput" placeholder="New Password (min 4 digits)">
+                <input type="password" id="confirmPasswordInput" placeholder="Confirm New Password">
+            </div>
+            <div style="text-align: center;">
+                <button class="btn btn-primary" onclick="changeAdminPassword()">
+                    <i class="fas fa-key"></i> Change Password
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-list"></i> All Families</h3>
+        <div id="studentList">Loading families...</div>
+    </div>
+</div>
+
+<!-- Approval Page -->
+<div id="approvalPage" class="page">
+    <div class="header">
+        <h1><i class="fas fa-check-circle"></i> Pending Approvals</h1>
+        <p>Review and approve prayer submissions</p>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-clock"></i> Pending Submissions</h3>
+        <div style="margin-bottom: 20px;">
+            <button class="btn btn-secondary" onclick="deleteAllPendingSubmissions()" style="padding: 10px 20px;">
+                <i class="fas fa-trash"></i> Delete All Pending
+            </button>
+        </div>
+        <div id="pendingSubmissions">
+            <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <h3>No pending submissions</h3>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3><i class="fas fa-history"></i> Approval History</h3>
+        <div style="margin-bottom: 20px;">
+            <button class="btn btn-secondary" onclick="deleteAllApprovalHistory()" style="padding: 10px 20px;">
+                <i class="fas fa-trash"></i> Delete All History
+            </button>
+        </div>
+        <div id="approvalHistory">
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <h3>No approval history</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Page -->
+<div id="reportPage" class="page">
+    <div class="header">
+        <h1><i class="fas fa-chart-bar"></i> Family Reports</h1>
+        <p>View detailed prayer reports</p>
+    </div>
+    
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <div style="display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <input type="number" id="reportRoll" placeholder="Enter Family Roll" style="max-width: 300px;">
+                <button class="btn btn-primary" onclick="loadFamilyReport()">
+                    <i class="fas fa-chart-line"></i> Load Report
+                </button>
+            </div>
+        </div>
+        <div id="reportContent">
+            <div class="empty-state">
+                <i class="fas fa-chart-pie"></i>
+                <h3>Enter family roll number to view report</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Excel Sheet Page -->
+<div id="sheetPage" class="page">
+    <div class="header">
+        <h1><i class="fas fa-table"></i> Excel Sheet View</h1>
+        <p>Complete prayer record of all students</p>
+    </div>
+    
+    <div class="card">
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Family Roll</th>
+                        <th><i class="fas fa-user"></i> Name</th>
+                        <th><i class="fas fa-sun"></i> فجر</th>
+                        <th><i class="fas fa-clock"></i> ظہر</th>
+                        <th><i class="fas fa-cloud-sun"></i> عصر</th>
+                        <th><i class="fas fa-sunset"></i> مغرب</th>
+                        <th><i class="fas fa-moon"></i> عشاء</th>
+                        <th><i class="fas fa-calculator"></i> Total</th>
+                    </tr>
+                </thead>
+                <tbody id="allStudentsTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="alertBox" style="position:fixed;top:80px;right:25px;max-width:350px;z-index:1000;"></div>
+
+<script>
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyDp8fdbDJRs17iFgcj1lN1YAmhiWccEkuc",
+    authDomain: "result-app-8cdd1.firebaseapp.com",
+    databaseURL: "https://result-app-8cdd1-default-rtdb.firebaseio.com",
+    projectId: "result-app-8cdd1",
+    storageBucket: "result-app-8cdd1.firebasestorage.app",
+    messagingSenderId: "1000820695282",
+    appId: "1:1000820695282:web:82a4f0ee1e51de2305f06b"
+};
+
+// Initialize Firebase
+let db;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    console.log("Firebase initialized");
+    
+    // Check for existing password in Firebase
+    db.ref('admin/password').once('value', snapshot => {
+        if(!snapshot.exists()) {
+            // Set default password if not exists
+            db.ref('admin').set({
+                password: "6457",
+                created: new Date().toISOString()
+            });
+        }
+    });
+} catch (error) {
+    console.error("Firebase error:", error);
+}
+
+let currentFamilyRoll = null;
+let studentsData = {};
+let isAdmin = false;
+
+// Show specific page
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    if(pageId === 'adminPage' && isAdmin) {
+        loadStudents();
+    }
+    if(pageId === 'approvalPage' && isAdmin) {
+        loadPendingSubmissions();
+        loadApprovalHistory();
+    }
+    if(pageId === 'sheetPage') {
+        loadExcelSheet();
+    }
+}
+
+// Show admin login
+function showAdminLogin() {
+    showPage('loginPage');
+    document.getElementById('adminPassword').focus();
+}
+
+// Show parent page
+function showParentPage() {
+    showPage('parentPage');
+    document.getElementById('navBar').style.display = 'none';
+    isAdmin = false;
+    // Clear student display when going back to parent page
+    document.getElementById('familyInfo').style.display = 'none';
+    document.getElementById('rollNumber').value = '';
+}
+
+// Show alert
+function showAlert(message, type) {
+    const alertBox = document.getElementById('alertBox');
+    alertBox.innerHTML = `<div class="alert ${type}"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}</div>`;
+    setTimeout(() => alertBox.innerHTML = '', 4000);
+}
+
+// Login function
+function login() {
+    const password = document.getElementById('adminPassword').value;
+    
+    if(!password) {
+        showAlert('Please enter password', 'error');
+        return;
+    }
+    
+    // Get password from Firebase
+    db.ref('admin/password').once('value', snapshot => {
+        const storedPassword = snapshot.val();
+        
+        if(password === storedPassword) {
+            isAdmin = true;
+            document.getElementById('navBar').style.display = 'flex';
+            showPage('adminPage');
+            loadStudents();
+            showAlert('Admin login successful!', 'success');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('loginStatus').textContent = '';
+        } else {
+            showAlert('Incorrect password. Please try again.', 'error');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminPassword').focus();
+            // Don't show actual password in error message
+            document.getElementById('loginStatus').textContent = 'Access denied';
+        }
+    });
+}
+
+// Logout function
+function logout() {
+    isAdmin = false;
+    document.getElementById('navBar').style.display = 'none';
+    showPage('parentPage');
+    document.getElementById('adminPassword').value = '';
+    currentFamilyRoll = null;
+    studentsData = {};
+}
+
+// Load family by roll number
+function loadFamily() {
+    const roll = document.getElementById('rollNumber').value.trim();
+    
+    if(!roll) {
+        // Clear student display if roll number is empty
+        document.getElementById('familyInfo').style.display = 'none';
+        showAlert('Please enter family roll number', 'error');
+        return;
+    }
+    
+    const rollNum = parseInt(roll);
+    
+    db.ref('students').orderByChild('roll').equalTo(rollNum).once('value', snapshot => {
+        if(snapshot.exists()) {
+            document.getElementById('familyRoll').textContent = roll;
+            const container = document.getElementById('studentsNamazContainer');
+            container.innerHTML = '';
+            studentsData = {};
+            
+            let count = 0;
+            snapshot.forEach(childSnapshot => {
+                const student = childSnapshot.val();
+                const studentId = childSnapshot.key;
+                count++;
+                
+                const studentDiv = document.createElement('div');
+                studentDiv.className = 'student-namaz-container';
+                studentDiv.innerHTML = `
+                    <div class="student-name-header">
+                        <i class="fas fa-user-graduate"></i> ${student.name}
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <p style="text-align: center; color: #666; margin-bottom: 15px; font-size: 16px;">
+                            <i class="fas fa-check-circle"></i> Select today's prayers:
+                        </p>
+                        <div class="namaz-horizontal">
+                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_fajr')">
+                                <h4 style="color: #1565c0;">فجر</h4>
+                                <p>Fajr - Dawn</p>
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_fajr">
+                            </div>
+                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_dhuhr')">
+                                <h4 style="color: #2e7d32;">ظہر</h4>
+                                <p>Dhuhr - Noon</p>
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_dhuhr">
+                            </div>
+                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_asr')">
+                                <h4 style="color: #7b1fa2;">عصر</h4>
+                                <p>Asr - Afternoon</p>
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_asr">
+                            </div>
+                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_maghrib')">
+                                <h4 style="color: #ef6c00;">مغرب</h4>
+                                <p>Maghrib - Sunset</p>
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_maghrib">
+                            </div>
+                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_isha')">
+                                <h4 style="color: #37474f;">عشاء</h4>
+                                <p>Isha - Night</p>
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_isha">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(studentDiv);
+                
+                studentsData[studentId] = {
+                    name: student.name,
+                    roll: student.roll
+                };
+            });
+            
+            document.getElementById('studentCount').textContent = count;
+            document.getElementById('familyInfo').style.display = 'block';
+            currentFamilyRoll = rollNum;
+            
+            // Load pending submissions for this family
+            loadFamilyPendingSubmissions(rollNum);
+            
+            showAlert(`Found ${count} students in family ${roll}`, 'success');
+        } else {
+            document.getElementById('familyInfo').style.display = 'none';
+            showAlert('No family found with this roll number', 'error');
+        }
+    });
+}
+
+// Load pending submissions for family
+function loadFamilyPendingSubmissions(familyRoll) {
+    db.ref('submissions').orderByChild('familyRoll').equalTo(familyRoll).once('value', snapshot => {
+        if(snapshot.exists()) {
+            let pendingCount = 0;
+            snapshot.forEach(childSnapshot => {
+                const submission = childSnapshot.val();
+                if(submission.status === 'pending') {
+                    pendingCount++;
+                }
+            });
+            
+            if(pendingCount > 0) {
+                document.getElementById('pendingInfo').style.display = 'block';
+                document.getElementById('pendingCount').textContent = pendingCount;
+            } else {
+                document.getElementById('pendingInfo').style.display = 'none';
+            }
+            
+            // Load submission history
+            loadFamilySubmissionHistory(familyRoll);
+        } else {
+            document.getElementById('pendingInfo').style.display = 'none';
+            document.getElementById('submissionHistory').style.display = 'none';
+        }
+    });
+}
+
+// Load submission history for family
+function loadFamilySubmissionHistory(familyRoll) {
+    db.ref('submissions').orderByChild('familyRoll').equalTo(familyRoll).once('value', snapshot => {
+        const historyList = document.getElementById('historyList');
+        
+        if(!snapshot.exists()) {
+            document.getElementById('submissionHistory').style.display = 'none';
+            return;
+        }
+        
+        let historyHtml = '';
+        let hasHistory = false;
+        
+        snapshot.forEach(childSnapshot => {
+            const submission = childSnapshot.val();
+            hasHistory = true;
+            
+            const date = new Date(submission.timestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            const statusClass = submission.status === 'approved' ? 'approved' : 
+                               submission.status === 'rejected' ? 'rejected' : 'pending';
+            const statusText = submission.status === 'approved' ? 'Approved' : 
+                              submission.status === 'rejected' ? 'Rejected' : 'Pending';
+            
+            historyHtml += `
+                <div class="submission-item">
+                    <div>
+                        <strong>${formattedDate}</strong><br>
+                        <small>Submitted by parent</small>
+                    </div>
+                    <div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if(hasHistory) {
+            document.getElementById('submissionHistory').style.display = 'block';
+            historyList.innerHTML = historyHtml;
+        } else {
+            document.getElementById('submissionHistory').style.display = 'none';
+        }
+    });
+}
+
+// Clear student display when roll number is erased
+function checkRollNumberInput() {
+    const rollInput = document.getElementById('rollNumber');
+    rollInput.addEventListener('input', function() {
+        if(this.value.trim() === '') {
+            document.getElementById('familyInfo').style.display = 'none';
+            studentsData = {};
+            currentFamilyRoll = null;
+        }
+    });
+}
+
+// Toggle namaz checkbox
+function toggleNamaz(checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    const option = checkbox.closest('.namaz-option');
+    checkbox.checked = !checkbox.checked;
+    
+    if(checkbox.checked) {
+        option.classList.add('selected');
+    } else {
+        option.classList.remove('selected');
+    }
+}
+
+// Submit all namaz for family (creates pending submission)
+function submitAllNamaz() {
+    if(!currentFamilyRoll || Object.keys(studentsData).length === 0) {
+        showAlert('Please search for family first', 'error');
+        return;
+    }
+    
+    const namazData = {};
+    let hasSelection = false;
+    
+    Object.keys(studentsData).forEach(studentId => {
+        const namazOffered = [];
+        const namazTypes = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        
+        namazTypes.forEach(namaz => {
+            const checkbox = document.getElementById(`${studentId}_${namaz}`);
+            if(checkbox && checkbox.checked) {
+                namazOffered.push(namaz);
+                hasSelection = true;
+            }
+        });
+        
+        if(namazOffered.length > 0) {
+            namazData[studentId] = {
+                name: studentsData[studentId].name,
+                namaz: namazOffered
+            };
+        }
+    });
+    
+    if(!hasSelection) {
+        showAlert('Please select at least one prayer', 'error');
+        return;
+    }
+    
+    // Create submission record
+    const submissionRef = db.ref('submissions').push();
+    const submissionId = submissionRef.key;
+    
+    const submissionData = {
+        familyRoll: currentFamilyRoll,
+        namazData: namazData,
+        status: 'pending',
+        submittedAt: new Date().toISOString(),
+        timestamp: Date.now()
+    };
+    
+    submissionRef.set(submissionData).then(() => {
+        showAlert('✓ Submission sent for admin approval!', 'success');
+        
+        // Clear checkboxes
+        Object.keys(studentsData).forEach(studentId => {
+            const namazTypes = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+            namazTypes.forEach(namaz => {
+                const checkbox = document.getElementById(`${studentId}_${namaz}`);
+                if(checkbox) {
+                    checkbox.checked = false;
+                    checkbox.closest('.namaz-option').classList.remove('selected');
+                }
+            });
+        });
+        
+        // Reload pending submissions
+        loadFamilyPendingSubmissions(currentFamilyRoll);
+        
+        // If admin is logged in, refresh pending submissions list
+        if(isAdmin) {
+            loadPendingSubmissions();
+        }
+        
+    }).catch(error => {
+        showAlert('Error submitting: ' + error.message, 'error');
+    });
+}
+
+// Load pending submissions for admin
+function loadPendingSubmissions() {
+    if(!isAdmin) return;
+    
+    db.ref('submissions').orderByChild('status').equalTo('pending').once('value', snapshot => {
+        const container = document.getElementById('pendingSubmissions');
+        
+        if(!snapshot.exists()) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h3>No pending submissions</h3></div>';
+            return;
+        }
+        
+        let submissionsHtml = '';
+        let count = 0;
+        
+        snapshot.forEach(childSnapshot => {
+            const submission = childSnapshot.val();
+            const submissionId = childSnapshot.key;
+            count++;
+            
+            const date = new Date(submission.submittedAt);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            
+            let studentsHtml = '';
+            Object.keys(submission.namazData || {}).forEach(studentId => {
+                const data = submission.namazData[studentId];
+                studentsHtml += `
+                    <div style="margin: 10px 0; padding: 10px; background: white; border-radius: 8px;">
+                        <strong>${data.name}</strong>: ${data.namaz.map(n => 
+                            `<span style="display:inline-block; padding:3px 8px; margin:2px; background:#e8f5e9; border-radius:5px;">${n}</span>`
+                        ).join(' ')}
+                    </div>
+                `;
+            });
+            
+            submissionsHtml += `
+                <div class="card" style="margin-bottom: 20px; position: relative;">
+                    <button class="delete-btn" onclick="deleteSubmission('${submissionId}')" style="position: absolute; top: 10px; right: 10px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <h4 style="color: #ff6b6b; margin-right: 30px;">
+                        <i class="fas fa-users"></i> Family Roll: ${submission.familyRoll}
+                    </h4>
+                    <p style="color: #666; margin: 10px 0;">
+                        <i class="fas fa-clock"></i> Submitted: ${formattedDate}
+                    </p>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                        <h5 style="margin: 0 0 10px;">Prayers to approve:</h5>
+                        ${studentsHtml}
+                    </div>
+                    
+                    <div class="approval-actions">
+                        <button class="btn btn-success" onclick="approveSubmission('${submissionId}')" style="flex:1;">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-danger" onclick="rejectSubmission('${submissionId}')" style="flex:1;">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = submissionsHtml;
+    });
+}
+
+// Load approval history
+function loadApprovalHistory() {
+    if(!isAdmin) return;
+    
+    db.ref('submissions').orderByChild('timestamp').once('value', snapshot => {
+        const container = document.getElementById('approvalHistory');
+        
+        if(!snapshot.exists()) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><h3>No approval history</h3></div>';
+            return;
+        }
+        
+        let historyHtml = '';
+        const submissions = [];
+        
+        snapshot.forEach(childSnapshot => {
+            const submission = childSnapshot.val();
+            submissions.push({...submission, id: childSnapshot.key});
+        });
+        
+        // Sort by timestamp (newest first)
+        submissions.sort((a, b) => b.timestamp - a.timestamp);
+        
+        submissions.forEach(submission => {
+            if(submission.status !== 'pending') {
+                const date = new Date(submission.submittedAt);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                const statusClass = submission.status === 'approved' ? 'approved' : 'rejected';
+                const statusText = submission.status === 'approved' ? 'Approved' : 'Rejected';
+                
+                historyHtml += `
+                    <div class="submission-item">
+                        <div>
+                            <strong>Family Roll: ${submission.familyRoll}</strong><br>
+                            <small>${formattedDate}</small>
+                        </div>
+                        <div class="history-actions">
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                            <button class="delete-btn" onclick="deleteSubmission('${submission.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        if(historyHtml) {
+            container.innerHTML = historyHtml;
+        } else {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><h3>No approval history</h3></div>';
+        }
+    });
+}
+
+// Delete a single submission
+function deleteSubmission(submissionId) {
+    if(!isAdmin) return;
+    
+    if(!confirm('Are you sure you want to delete this submission?')) {
+        return;
+    }
+    
+    db.ref('submissions/' + submissionId).remove().then(() => {
+        showAlert('✓ Submission deleted successfully!', 'success');
+        
+        // Reload both lists
+        loadPendingSubmissions();
+        loadApprovalHistory();
+        
+        // If parent page is open, refresh their history
+        if(currentFamilyRoll) {
+            loadFamilyPendingSubmissions(currentFamilyRoll);
+        }
+    }).catch(error => {
+        showAlert('Error deleting submission: ' + error.message, 'error');
+    });
+}
+
+// Delete all pending submissions
+function deleteAllPendingSubmissions() {
+    if(!isAdmin) return;
+    
+    if(!confirm('Delete ALL pending submissions? This action cannot be undone.')) {
+        return;
+    }
+    
+    db.ref('submissions').orderByChild('status').equalTo('pending').once('value', snapshot => {
+        if(!snapshot.exists()) {
+            showAlert('No pending submissions to delete', 'info');
+            return;
+        }
+        
+        let deletePromises = [];
+        snapshot.forEach(childSnapshot => {
+            deletePromises.push(db.ref('submissions/' + childSnapshot.key).remove());
+        });
+        
+        Promise.all(deletePromises).then(() => {
+            showAlert(`✓ Deleted all pending submissions!`, 'success');
+            loadPendingSubmissions();
+            
+            // Refresh parent page if open
+            if(currentFamilyRoll) {
+                loadFamilyPendingSubmissions(currentFamilyRoll);
+            }
+        }).catch(error => {
+            showAlert('Error deleting submissions: ' + error.message, 'error');
+        });
+    });
+}
+
+// Delete all approval history
+function deleteAllApprovalHistory() {
+    if(!isAdmin) return;
+    
+    if(!confirm('Delete ALL approval history? This action cannot be undone.')) {
+        return;
+    }
+    
+    db.ref('submissions').once('value', snapshot => {
+        if(!snapshot.exists()) {
+            showAlert('No history to delete', 'info');
+            return;
+        }
+        
+        let deletePromises = [];
+        snapshot.forEach(childSnapshot => {
+            const submission = childSnapshot.val();
+            if(submission.status !== 'pending') {
+                deletePromises.push(db.ref('submissions/' + childSnapshot.key).remove());
+            }
+        });
+        
+        if(deletePromises.length === 0) {
+            showAlert('No approval history to delete', 'info');
+            return;
+        }
+        
+        Promise.all(deletePromises).then(() => {
+            showAlert(`✓ Deleted all approval history!`, 'success');
+            loadApprovalHistory();
+        }).catch(error => {
+            showAlert('Error deleting history: ' + error.message, 'error');
+        });
+    });
+}
+
+// Approve submission
+function approveSubmission(submissionId) {
+    if(!isAdmin) return;
+    
+    if(!confirm('Approve this submission? Prayers will be added to student counts.')) {
+        return;
+    }
+    
+    db.ref('submissions/' + submissionId).once('value', snapshot => {
+        const submission = snapshot.val();
+        
+        // Update submission status
+        db.ref('submissions/' + submissionId).update({
+            status: 'approved',
+            approvedAt: new Date().toISOString()
+        }).then(() => {
+            // Update student counts
+            const updates = {};
+            Object.keys(submission.namazData || {}).forEach(studentId => {
+                const data = submission.namazData[studentId];
+                data.namaz.forEach(namaz => {
+                    updates[studentId + '/' + namaz] = firebase.database.ServerValue.increment(1);
+                });
+            });
+            
+            db.ref('students').update(updates).then(() => {
+                showAlert('✓ Submission approved and counts updated!', 'success');
+                loadPendingSubmissions();
+                loadApprovalHistory();
+                loadExcelSheet();
+                
+                // Refresh if parent page is open
+                if(currentFamilyRoll === submission.familyRoll) {
+                    loadFamilyPendingSubmissions(submission.familyRoll);
+                }
+            });
+        });
+    });
+}
+
+// Reject submission
+function rejectSubmission(submissionId) {
+    if(!isAdmin) return;
+    
+    if(!confirm('Reject this submission?')) {
+        return;
+    }
+    
+    db.ref('submissions/' + submissionId).update({
+        status: 'rejected',
+        rejectedAt: new Date().toISOString()
+    }).then(() => {
+        showAlert('Submission rejected', 'success');
+        loadPendingSubmissions();
+        loadApprovalHistory();
+        
+        // Refresh if parent page is open
+        db.ref('submissions/' + submissionId).once('value', snapshot => {
+            const submission = snapshot.val();
+            if(currentFamilyRoll === submission.familyRoll) {
+                loadFamilyPendingSubmissions(submission.familyRoll);
+            }
+        });
+    });
+}
+
+// Add family students
+function addFamilyStudents() {
+    if(!isAdmin) {
+        showAlert('Please login as admin first', 'error');
+        return;
+    }
+    
+    const roll = document.getElementById('newFamilyRoll').value.trim();
+    if(!roll) {
+        showAlert('Please enter family roll number', 'error');
+        return;
+    }
+    
+    const rollNum = parseInt(roll);
+    const nameInputs = document.querySelectorAll('.studentName');
+    
+    let addedCount = 0;
+    let validNames = 0;
+    
+    nameInputs.forEach(input => {
+        const name = input.value.trim();
+        if(name) validNames++;
+    });
+    
+    if(validNames === 0) {
+        showAlert('Please enter at least one student name', 'error');
+        return;
+    }
+    
+    nameInputs.forEach(input => {
+        const name = input.value.trim();
+        if(name) {
+            const studentRef = db.ref('students').push();
+            studentRef.set({
+                name: name,
+                roll: rollNum,
+                fajr: 0,
+                dhuhr: 0,
+                asr: 0,
+                maghrib: 0,
+                isha: 0,
+                created: new Date().toISOString()
+            }).then(() => {
+                addedCount++;
+                input.value = '';
+                
+                if(addedCount === validNames) {
+                    showAlert(`✓ ${addedCount} students added to family ${rollNum}!`, 'success');
+                    document.getElementById('newFamilyRoll').value = '';
+                    loadStudents();
+                    loadExcelSheet();
+                }
+            });
+        }
+    });
+}
+
+// Reset family namaz
+function resetFamilyNamaz() {
+    if(!isAdmin) return;
+    
+    const roll = document.getElementById('resetRoll').value.trim();
+    if(!roll) {
+        showAlert('Please enter family roll number', 'error');
+        return;
+    }
+    
+    if(!confirm(`Reset all prayer counts for family ${roll}?`)) {
+        return;
+    }
+    
+    const rollNum = parseInt(roll);
+    
+    db.ref('students').orderByChild('roll').equalTo(rollNum).once('value', snapshot => {
+        if(!snapshot.exists()) {
+            showAlert('No family found', 'error');
+            return;
+        }
+        
+        let resetCount = 0;
+        snapshot.forEach(childSnapshot => {
+            const updates = {
+                fajr: 0,
+                dhuhr: 0,
+                asr: 0,
+                maghrib: 0,
+                isha: 0
+            };
+            
+            db.ref('students/' + childSnapshot.key).update(updates).then(() => {
+                resetCount++;
+                if(resetCount === snapshot.numChildren()) {
+                    showAlert(`✓ Reset ${resetCount} students in family ${roll}`, 'success');
+                    document.getElementById('resetRoll').value = '';
+                    loadStudents();
+                    loadExcelSheet();
+                }
+            });
+        });
+    });
+}
+
+// Change admin password
+function changeAdminPassword() {
+    if(!isAdmin) return;
+    
+    const currentPass = document.getElementById('currentPasswordInput').value;
+    const newPass = document.getElementById('newPasswordInput').value;
+    const confirmPass = document.getElementById('confirmPasswordInput').value;
+    
+    if(!currentPass || !newPass || !confirmPass) {
+        showAlert('Please fill all password fields', 'error');
+        return;
+    }
+    
+    if(newPass.length < 4) {
+        showAlert('New password must be at least 4 characters', 'error');
+        return;
+    }
+    
+    if(newPass !== confirmPass) {
+        showAlert('New passwords do not match', 'error');
+        return;
+    }
+    
+    // Verify current password
+    db.ref('admin/password').once('value', snapshot => {
+        const storedPassword = snapshot.val();
+        
+        if(currentPass !== storedPassword) {
+            showAlert('Current password is incorrect', 'error');
+            document.getElementById('currentPasswordInput').value = '';
+            return;
+        }
+        
+        // Update password
+        db.ref('admin').update({
+            password: newPass,
+            changed: new Date().toISOString()
+        }).then(() => {
+            showAlert('✓ Password changed successfully!', 'success');
+            document.getElementById('currentPasswordInput').value = '';
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('confirmPasswordInput').value = '';
+        }).catch(error => {
+            showAlert('Error changing password: ' + error.message, 'error');
+        });
+    });
+}
+
+// Load all students for admin
+function loadStudents() {
+    if(!isAdmin) return;
+    
+    db.ref('students').once('value', snapshot => {
+        const studentList = document.getElementById('studentList');
+        
+        if(!snapshot.exists()) {
+            studentList.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><h3>No students found</h3></div>';
+            return;
+        }
+        
+        const families = {};
+        snapshot.forEach(childSnapshot => {
+            const student = childSnapshot.val();
+            const roll = student.roll;
+            
+            if(!families[roll]) {
+                families[roll] = [];
+            }
+            families[roll].push({...student, id: childSnapshot.key});
+        });
+        
+        studentList.innerHTML = '';
+        
+        Object.keys(families).sort((a,b) => a - b).forEach(roll => {
+            const familyDiv = document.createElement('div');
+            familyDiv.className = 'student-item';
+            familyDiv.innerHTML = `
+                <h4 style="margin:0 0 15px;color:#ff6b6b;font-size:20px;">
+                    <i class="fas fa-users"></i> Family Roll: ${roll} (${families[roll].length} students)
+                </h4>
+            `;
+            
+            families[roll].forEach(student => {
+                const total = (student.fajr || 0) + (student.dhuhr || 0) + (student.asr || 0) + 
+                             (student.maghrib || 0) + (student.isha || 0);
+                
+                const div = document.createElement('div');
+                div.style.padding = '15px';
+                div.style.margin = '10px 0';
+                div.style.background = 'white';
+                div.style.borderRadius = '10px';
+                div.style.boxShadow = '0 3px 10px rgba(0,0,0,0.08)';
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div><strong style="font-size: 16px;">${student.name}</strong></div>
+                        <button onclick="deleteStudent('${student.id}')" class="btn-danger" style="padding: 6px 12px; font-size: 12px; border-radius: 20px;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; font-size: 13px; text-align: center;">
+                        <div style="background: #bbdefb; padding: 8px; border-radius: 6px; color: #1565c0; font-weight: bold;">فجر: ${student.fajr || 0}</div>
+                        <div style="background: #c8e6c9; padding: 8px; border-radius: 6px; color: #2e7d32; font-weight: bold;">ظہر: ${student.dhuhr || 0}</div>
+                        <div style="background: #e1bee7; padding: 8px; border-radius: 6px; color: #7b1fa2; font-weight: bold;">عصر: ${student.asr || 0}</div>
+                        <div style="background: #ffcc80; padding: 8px; border-radius: 6px; color: #ef6c00; font-weight: bold;">مغرب: ${student.maghrib || 0}</div>
+                        <div style="background: #b0bec5; padding: 8px; border-radius: 6px; color: #37474f; font-weight: bold;">عشاء: ${student.isha || 0}</div>
+                    </div>
+                    <div style="text-align:center; margin-top: 10px; font-weight: bold; color: #2c5f2d; font-size: 16px;">
+                        <i class="fas fa-calculator"></i> Total: ${total}
+                    </div>
+                `;
+                familyDiv.appendChild(div);
+            });
+            
+            studentList.appendChild(familyDiv);
+        });
+    });
+}
+
+// Delete student
+function deleteStudent(key) {
+    if(!isAdmin) return;
+    
+    if(confirm('Delete this student?')) {
+        db.ref('students/' + key).remove().then(() => {
+            showAlert('✓ Student deleted successfully', 'success');
+            loadStudents();
+            loadExcelSheet();
+        });
+    }
+}
+
+// Load family report
+function loadFamilyReport() {
+    const roll = document.getElementById('reportRoll').value.trim();
+    if(!roll) {
+        showAlert('Please enter family roll number', 'error');
+        return;
+    }
+    
+    const rollNum = parseInt(roll);
+    
+    db.ref('students').orderByChild('roll').equalTo(rollNum).once('value', snapshot => {
+        const reportContent = document.getElementById('reportContent');
+        
+        if(!snapshot.exists()) {
+            reportContent.innerHTML = '<div class="alert error"><i class="fas fa-exclamation-triangle"></i> Family not found</div>';
+            return;
+        }
+        
+        let familyTotal = 0;
+        let studentsHtml = '';
+        let count = 0;
+        
+        snapshot.forEach(childSnapshot => {
+            const student = childSnapshot.val();
+            const total = (student.fajr || 0) + (student.dhuhr || 0) + (student.asr || 0) + 
+                         (student.maghrib || 0) + (student.isha || 0);
+            familyTotal += total;
+            count++;
+            
+            studentsHtml += `
+                <div class="student-item" style="margin-bottom: 20px;">
+                    <h4 style="color: #ff6b6b; margin-bottom: 15px;"><i class="fas fa-user-graduate"></i> ${student.name}</h4>
+                    <div class="stats">
+                        <div class="stat-box" style="background: linear-gradient(135deg, #bbdefb 0%, #64b5f6 100%);">
+                            <h4>فجر</h4>
+                            <div class="stat-number">${student.fajr || 0}</div>
+                        </div>
+                        <div class="stat-box" style="background: linear-gradient(135deg, #c8e6c9 0%, #81c784 100%);">
+                            <h4>ظہر</h4>
+                            <div class="stat-number">${student.dhuhr || 0}</div>
+                        </div>
+                        <div class="stat-box" style="background: linear-gradient(135deg, #e1bee7 0%, #ba68c8 100%);">
+                            <h4>عصر</h4>
+                            <div class="stat-number">${student.asr || 0}</div>
+                        </div>
+                        <div class="stat-box" style="background: linear-gradient(135deg, #ffcc80 0%, #ffb74d 100%);">
+                            <h4>مغرب</h4>
+                            <div class="stat-number">${student.maghrib || 0}</div>
+                        </div>
+                        <div class="stat-box" style="background: linear-gradient(135deg, #b0bec5 0%, #78909c 100%);">
+                            <h4>عشاء</h4>
+                            <div class="stat-number">${student.isha || 0}</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center; margin-top: 15px; font-weight: bold; font-size: 18px; color: #2c5f2d;">
+                        <i class="fas fa-calculator"></i> Total: ${total}
+                    </div>
+                </div>
+            `;
+        });
+        
+        reportContent.innerHTML = `
+            <div style="text-align:center; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 15px;">
+                <h2 style="color: #1565c0; margin-bottom: 10px;">Family Roll: ${roll}</h2>
+                <p style="font-size: 18px; color: #0d47a1;"><i class="fas fa-users"></i> ${count} students in family</p>
+            </div>
+            ${studentsHtml}
+            <div style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-top: 25px; box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);">
+                <h3 style="margin: 0 0 15px; font-size: 22px;"><i class="fas fa-star"></i> Family Total Prayers</h3>
+                <div style="font-size: 48px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">${familyTotal}</div>
+            </div>
+        `;
+    });
+}
+
+// Load Excel sheet
+function loadExcelSheet() {
+    db.ref('students').once('value', snapshot => {
+        const tbody = document.getElementById('allStudentsTable');
+        
+        if(!snapshot.exists()) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No students found</h3>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        const students = [];
+        snapshot.forEach(childSnapshot => {
+            const student = childSnapshot.val();
+            if(student.name && student.roll) {
+                students.push(student);
+            }
+        });
+        
+        students.sort((a, b) => {
+            if(a.roll === b.roll) return a.name.localeCompare(b.name);
+            return a.roll - b.roll;
+        });
+        
+        if(students.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        No students available
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        
+        students.forEach(student => {
+            const total = (student.fajr || 0) + (student.dhuhr || 0) + (student.asr || 0) + 
+                         (student.maghrib || 0) + (student.isha || 0);
+            
+            const row = document.createElement('tr');
+            row.className = `roll-${student.roll}`;
+            row.innerHTML = `
+                <td style="font-weight: bold; color: #ff6b6b;">${student.roll}</td>
+                <td style="font-weight: bold; color: #333;">${student.name}</td>
+                <td><span class="namaz-cell fajr-cell">${student.fajr || 0}</span></td>
+                <td><span class="namaz-cell dhuhr-cell">${student.dhuhr || 0}</span></td>
+                <td><span class="namaz-cell asr-cell">${student.asr || 0}</span></td>
+                <td><span class="namaz-cell maghrib-cell">${student.maghrib || 0}</span></td>
+                <td><span class="namaz-cell isha-cell">${student.isha || 0}</span></td>
+                <td><span class="namaz-cell total-cell">${total}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    });
+}
+
+// Initialize
+window.onload = function() {
+    console.log("Faizana Raza Mudrasa Namaz Portal loaded");
+    document.getElementById('rollNumber').focus();
+    
+    // Check for empty roll number input
+    checkRollNumberInput();
+    
+    // Enter key support
+    document.getElementById('rollNumber').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') loadFamily();
+    });
+    
+    document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') login();
+    });
+    
+    document.getElementById('reportRoll').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') loadFamilyReport();
+    });
+    
+    // Load initial data
+    loadExcelSheet();
+};
+
+// Make functions accessible
+window.showPage = showPage;
+window.login = login;
+window.logout = logout;
+window.addFamilyStudents = addFamilyStudents;
+window.loadFamily = loadFamily;
+window.submitAllNamaz = submitAllNamaz;
+window.toggleNamaz = toggleNamaz;
+window.resetFamilyNamaz = resetFamilyNamaz;
+window.changeAdminPassword = changeAdminPassword;
+window.loadFamilyReport = loadFamilyReport;
+window.showAdminLogin = showAdminLogin;
+window.showParentPage = showParentPage;
+window.loadExcelSheet = loadExcelSheet;
+window.approveSubmission = approveSubmission;
+window.rejectSubmission = rejectSubmission;
+window.deleteSubmission = deleteSubmission;
+window.deleteAllPendingSubmissions = deleteAllPendingSubmissions;
+window.deleteAllApprovalHistory = deleteAllApprovalHistory;
+</script>
+</body>
+</html>
