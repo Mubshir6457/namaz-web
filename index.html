@@ -46,14 +46,22 @@
         .student-namaz-container { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 15px; margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .student-name-header { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 18px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 20px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
         
-        /* Horizontal Namaz Selection */
+        /* Horizontal Namaz Selection - IMPROVED FOR CLICKING */
         .namaz-horizontal { display: flex; justify-content: space-between; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
-        .namaz-option { flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 2px solid transparent; cursor: pointer; }
+        .namaz-option { flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 2px solid transparent; cursor: pointer; position: relative; }
         .namaz-option:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
         .namaz-option.selected { border-color: #4CAF50; background: #e8f5e9; }
         .namaz-option h4 { color: #333; margin-bottom: 10px; font-size: 18px; font-weight: 600; }
         .namaz-option p { color: #666; font-size: 14px; margin-bottom: 15px; }
-        .namaz-checkbox { transform: scale(1.8); margin-top: 5px; accent-color: #4CAF50; }
+        .namaz-checkbox { transform: scale(1.8); margin-top: 5px; accent-color: #4CAF50; cursor: pointer; }
+        
+        /* Prayer Box Icons */
+        .namaz-option i { font-size: 24px; margin-bottom: 10px; display: block; }
+        .fajr-option i { color: #1565c0; }
+        .dhuhr-option i { color: #2e7d32; }
+        .asr-option i { color: #7b1fa2; }
+        .maghrib-option i { color: #ef6c00; }
+        .isha-option i { color: #37474f; }
         
         /* Excel Table */
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 25px; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
@@ -377,15 +385,15 @@
 <div id="alertBox" style="position:fixed;top:80px;right:25px;max-width:350px;z-index:1000;"></div>
 
 <script>
-// Firebase configuration
+// NEW Firebase configuration with code 6457
 const firebaseConfig = {
-    apiKey: "AIzaSyDp8fdbDJRs17iFgcj1lN1YAmhiWccEkuc",
-    authDomain: "result-app-8cdd1.firebaseapp.com",
-    databaseURL: "https://result-app-8cdd1-default-rtdb.firebaseio.com",
-    projectId: "result-app-8cdd1",
-    storageBucket: "result-app-8cdd1.firebasestorage.app",
-    messagingSenderId: "1000820695282",
-    appId: "1:1000820695282:web:82a4f0ee1e51de2305f06b"
+    apiKey: "AIzaSyCoCfj56yDanp5BBMNzgxJYBNuOgtSfY-o",
+    authDomain: "faizan-e-raza-madarsa.firebaseapp.com",
+    databaseURL: "https://faizan-e-raza-madarsa-default-rtdb.firebaseio.com",
+    projectId: "faizan-e-raza-madarsa",
+    storageBucket: "faizan-e-raza-madarsa.firebasestorage.app",
+    messagingSenderId: "330849200003",
+    appId: "1:330849200003:web:d43bd9ac36af973383f8b6"
 };
 
 // Initialize Firebase
@@ -393,12 +401,12 @@ let db;
 try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
-    console.log("Firebase initialized");
+    console.log("Firebase initialized with new configuration");
     
-    // Check for existing password in Firebase
+    // Check for existing password in Firebase - set default to "6457"
     db.ref('admin/password').once('value', snapshot => {
         if(!snapshot.exists()) {
-            // Set default password if not exists
+            // Set default password to "6457" if not exists
             db.ref('admin').set({
                 password: "6457",
                 created: new Date().toISOString()
@@ -529,33 +537,38 @@ function loadFamily() {
                     </div>
                     <div style="margin-top: 20px;">
                         <p style="text-align: center; color: #666; margin-bottom: 15px; font-size: 16px;">
-                            <i class="fas fa-check-circle"></i> Select today's prayers:
+                            <i class="fas fa-check-circle"></i> Click anywhere on prayer boxes to select:
                         </p>
                         <div class="namaz-horizontal">
-                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_fajr')">
+                            <div class="namaz-option fajr-option" onclick="toggleNamaz('${studentId}_fajr')">
+                                <i class="fas fa-sun"></i>
                                 <h4 style="color: #1565c0;">فجر</h4>
                                 <p>Fajr - Dawn</p>
-                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_fajr">
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_fajr" onclick="toggleNamaz('${studentId}_fajr'); event.stopPropagation();">
                             </div>
-                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_dhuhr')">
+                            <div class="namaz-option dhuhr-option" onclick="toggleNamaz('${studentId}_dhuhr')">
+                                <i class="fas fa-clock"></i>
                                 <h4 style="color: #2e7d32;">ظہر</h4>
                                 <p>Dhuhr - Noon</p>
-                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_dhuhr">
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_dhuhr" onclick="toggleNamaz('${studentId}_dhuhr'); event.stopPropagation();">
                             </div>
-                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_asr')">
+                            <div class="namaz-option asr-option" onclick="toggleNamaz('${studentId}_asr')">
+                                <i class="fas fa-cloud-sun"></i>
                                 <h4 style="color: #7b1fa2;">عصر</h4>
                                 <p>Asr - Afternoon</p>
-                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_asr">
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_asr" onclick="toggleNamaz('${studentId}_asr'); event.stopPropagation();">
                             </div>
-                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_maghrib')">
+                            <div class="namaz-option maghrib-option" onclick="toggleNamaz('${studentId}_maghrib')">
+                                <i class="fas fa-sunset"></i>
                                 <h4 style="color: #ef6c00;">مغرب</h4>
                                 <p>Maghrib - Sunset</p>
-                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_maghrib">
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_maghrib" onclick="toggleNamaz('${studentId}_maghrib'); event.stopPropagation();">
                             </div>
-                            <div class="namaz-option" onclick="toggleNamaz('${studentId}_isha')">
+                            <div class="namaz-option isha-option" onclick="toggleNamaz('${studentId}_isha')">
+                                <i class="fas fa-moon"></i>
                                 <h4 style="color: #37474f;">عشاء</h4>
                                 <p>Isha - Night</p>
-                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_isha">
+                                <input type="checkbox" class="namaz-checkbox" id="${studentId}_isha" onclick="toggleNamaz('${studentId}_isha'); event.stopPropagation();">
                             </div>
                         </div>
                     </div>
@@ -575,7 +588,7 @@ function loadFamily() {
             // Load pending submissions for this family
             loadFamilyPendingSubmissions(rollNum);
             
-            showAlert(`Found ${count} students in family ${roll}`, 'success');
+            showAlert(`Found ${count} students in family ${roll}. Click anywhere on prayer boxes to select.`, 'success');
         } else {
             document.getElementById('familyInfo').style.display = 'none';
             showAlert('No family found with this roll number', 'error');
@@ -669,7 +682,7 @@ function checkRollNumberInput() {
     });
 }
 
-// Toggle namaz checkbox
+// Toggle namaz checkbox when clicking anywhere on the option box OR clicking the checkbox
 function toggleNamaz(checkboxId) {
     const checkbox = document.getElementById(checkboxId);
     const option = checkbox.closest('.namaz-option');
@@ -1413,7 +1426,7 @@ function loadExcelSheet() {
 
 // Initialize
 window.onload = function() {
-    console.log("Faizana Raza Mudrasa Namaz Portal loaded");
+    console.log("Faizana Raza Mudrasa Namaz Portal loaded with code 6457");
     document.getElementById('rollNumber').focus();
     
     // Check for empty roll number input
